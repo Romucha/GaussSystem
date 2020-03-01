@@ -1,0 +1,11 @@
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\bin\Debug\netcoreapp3.1\GaussParallelConsole.exe
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\bin\Debug\netcoreapp3.1\GaussParallelConsole.deps.json
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\bin\Debug\netcoreapp3.1\GaussParallelConsole.runtimeconfig.json
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\bin\Debug\netcoreapp3.1\GaussParallelConsole.runtimeconfig.dev.json
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\bin\Debug\netcoreapp3.1\GaussParallelConsole.dll
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\bin\Debug\netcoreapp3.1\GaussParallelConsole.pdb
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\obj\Debug\netcoreapp3.1\GaussParallelConsole.csprojAssemblyReference.cache
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\obj\Debug\netcoreapp3.1\GaussParallelConsole.AssemblyInfoInputs.cache
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\obj\Debug\netcoreapp3.1\GaussParallelConsole.AssemblyInfo.cs
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\obj\Debug\netcoreapp3.1\GaussParallelConsole.dll
+C:\Users\Roman\source\repos\GaussParallelConsole\GaussParallelConsole\obj\Debug\netcoreapp3.1\GaussParallelConsole.pdb

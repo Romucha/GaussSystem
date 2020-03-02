@@ -1,2 +1,7 @@
 # GaussSystem
-Solving system of linear algebraic equations by consecutive and parallel methods
+This is an attemp to solve task №3 from here: http://fedoruk.comcor.ru/Dev_bach/mthread_lab.html.
+The task is:
+Using tools of multithread programming, create parallel program of solving system of linear algebraic equations (SLAE) with block-diagonal coefficient matrix with a border. As an example, use test matrices from storage or generate test SLAE by provided method. Size of diagonal block, border width, number of parallel threads are program arguments. Number of diagonal blocks is equal to number of management threads. Adjusting matrix to diagonal view in realization of reversed walkthrough of Gauss method is unaccaptable! Program must perform faster comparing to consecutive method.
+
+Это попытка решить задачу №3 отсюда: http://fedoruk.comcor.ru/Dev_bach/mthread_lab.html.
+Разработать, используя средства многопотокового программирования, параллельную программу решения методом Гаусса системы линейных алгебраических уравнений (СЛАУ), матрица коэффициентов которой имеет блочно-диагональный с окаймлением вид. В качестве тестовых использовать реальные матрицы из хранилища или самостоятельно генерировать тестовую СЛАУ описанным ниже способом. Размер диагонального блока, ширина окаймления, количество параллельно выполняющихся потоков - аргументы программы. Количество диагональных блоков матрицы равно количеству потоков управления. При реализации обратного хода метода Гаусса недопустимо приведение матрицы к диагональному виду! Программа должна демонстрировать ускорение по сравнению с последовательным вариантом.

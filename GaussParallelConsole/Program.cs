@@ -32,15 +32,23 @@ namespace GaussParallelConsole
             ThreadNumber = int.Parse(args[2]);
             GenerateMatrix();
             GenerateVector();
-            ShowMatrix();
+            ShowMatrix(A, B);
+            var ADef = new double[MatrixWidth * MatrixWidth];
+            var BDef = new double[MatrixWidth];
             var ACons = new double[MatrixWidth * MatrixWidth];
-            var BCons = new double[MatrixWidth];
+            var BCons = new double[MatrixWidth * MatrixWidth];
+            A.CopyTo(ADef, 0);
+            B.CopyTo(BDef, 0);
             A.CopyTo(ACons, 0);
             B.CopyTo(BCons, 0);
-            GaussDirectConsecutive(ACons, BCons, out int Start);
-            Console.WriteLine();
-            GaussReverseConsecutive(ACons, BCons, out int End);
+            GaussDirectConsecutive(ADef, BDef, out int Start);
+            GaussReverseConsecutive(ADef, BDef, out int End);
             Console.WriteLine($"Consecutive time = {End - Start}");
+            Console.WriteLine();
+            GaussDirectConsecutiveByColumns(ACons, BCons, out int StartCons);
+            Console.WriteLine();
+            GaussReverseConsecutive(ACons, BCons, out int EndCons);
+            Console.WriteLine($"Consecutive time by columns = {EndCons - StartCons}");
         }
 
         //generate block-diagonal bordering matrix of size (n x n) and filled with random values from -1.0 to 1.0
@@ -95,20 +103,18 @@ namespace GaussParallelConsole
                         A[(MatrixWidth - 1) * MatrixWidth + j] = A[i * MatrixWidth + j] - A[(MatrixWidth - 1) * MatrixWidth + j] * multiplier;                        
                     }
                     B[MatrixWidth - 1] = -B[MatrixWidth - 1] * multiplier + B[i];
-                    Console.WriteLine();
-                    ShowMatrix();
                 }
             }
         }
 
         //reversed walkthrough of consecutive Gauss method
-        static void GaussReverseConsecutive(double[] A, double[] B, out int time)
+        static void GaussReverseConsecutive(double[] a, double[] b, out int time)
         {
             X = new double[MatrixWidth];
-            X[MatrixWidth - 1] = B.Last() / A.Last();
+            X[MatrixWidth - 1] = b[MatrixWidth - 1] / a[(MatrixWidth - 1) * MatrixWidth + MatrixWidth - 1];
             for (var i = 0; i < MatrixWidth - 1; i++)
             {
-                X[i] = (B[i] - X.Last() * A[i * MatrixWidth + MatrixWidth - 1]) / A[i * MatrixWidth + i];
+                X[i] = (B[i] - X[MatrixWidth - 1] * A[i * MatrixWidth + MatrixWidth - 1]) / A[i * MatrixWidth + i];
             }
             time = Environment.TickCount;
             Console.WriteLine("X:");
@@ -117,7 +123,57 @@ namespace GaussParallelConsole
             Console.WriteLine();
         }
 
-        static void ShowMatrix()
+        //method swaps to rows of matrix and vector
+        static void SwapRows(int i, int n, double[] a, double[] b)
+        {
+            for (var j = i; j < MatrixWidth; j++)
+            {
+                var bufA = a[i * MatrixWidth + j];
+                a[i * MatrixWidth + j] = a[n * MatrixWidth + j];
+                a[n * MatrixWidth + j] = bufA;
+            }
+            var bufB = b[i];
+            b[i] = b[n];
+            b[n] = bufB;
+        }
+
+        //method substarcts one row from another
+        static void SubstractRows(int i, int n, double multiplier, double[] a, double[] b)
+        {
+            //Console.WriteLine($"Substract {i} from {n}, multiplier is {multiplier}:");
+            //ShowMatrix(a, b);
+            for (var j = 0; j < MatrixWidth; j++)
+            {
+                a[n * MatrixWidth + j] -= a[i * MatrixWidth + j] * multiplier;
+            }
+            b[n] -= b[i] * multiplier;
+            //Console.WriteLine("Substraction is done:");
+            //ShowMatrix(a, b);
+        }
+
+        //direct walkthrough of consecutive Gauss method by columns
+        static void GaussDirectConsecutiveByColumns(double[] A, double[] B, out int time)
+        {
+            time = Environment.TickCount;
+            for (var i = 0; i < MatrixWidth - 1; i++)
+            {
+                //ShowMatrix(A, B);
+                if (Math.Abs(A[i * MatrixWidth + i]) < Math.Abs(A[(MatrixWidth - 1) * MatrixWidth + i]))
+                {
+                    SwapRows(i, MatrixWidth - 1, A, B);
+                }
+                for (var j = i + 1; j < MatrixWidth; j++)
+                {
+                    //if (A[j * MatrixWidth + i] != 0)
+                    {
+                        var multiplier = A[j * MatrixWidth + i] / A[i * MatrixWidth + i];
+                        SubstractRows(i, j, multiplier, A, B);
+                    }
+                }
+            }
+        }
+
+        static void ShowMatrix(double[] A, double[] B)
         {
             for (int i = 0; i < MatrixWidth; i++)
             {
@@ -127,6 +183,7 @@ namespace GaussParallelConsole
                 }
                 Console.WriteLine(B[i] >= 0 ? "|  {0:F4}" : "| {0:F4}", B[i]);
             }
+            Console.WriteLine();
         }
     }
 }

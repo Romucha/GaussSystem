@@ -32,23 +32,32 @@ namespace GaussParallelConsole
             ThreadNumber = int.Parse(args[2]);
             GenerateMatrix();
             GenerateVector();
-            ShowMatrix(A, B);
+            //ShowMatrix(A, B);
+            //default consecutive
             var ADef = new double[MatrixWidth * MatrixWidth];
             var BDef = new double[MatrixWidth];
+            //consecutive by columns
             var ACons = new double[MatrixWidth * MatrixWidth];
             var BCons = new double[MatrixWidth * MatrixWidth];
+            //parallel
+            var APar = new double[MatrixWidth * MatrixWidth];
+            var BPar = new double[MatrixWidth];
             A.CopyTo(ADef, 0);
             B.CopyTo(BDef, 0);
             A.CopyTo(ACons, 0);
             B.CopyTo(BCons, 0);
-            GaussDirectConsecutive(ADef, BDef, out int Start);
-            GaussReverseConsecutive(ADef, BDef, out int End);
-            Console.WriteLine($"Consecutive time = {End - Start}");
-            Console.WriteLine();
+            A.CopyTo(APar, 0);
+            B.CopyTo(BPar, 0);
+            //GaussDirectConsecutive(ADef, BDef, out int Start);
+            //GaussReverseConsecutive(ADef, BDef, out int End);
+            //Console.WriteLine($"Consecutive time = {End - Start}");
+            //Console.WriteLine();
             GaussDirectConsecutiveByColumns(ACons, BCons, out int StartCons);
-            Console.WriteLine();
             GaussReverseConsecutive(ACons, BCons, out int EndCons);
-            Console.WriteLine($"Consecutive time by columns = {EndCons - StartCons}");
+            Console.WriteLine($"Consecutive time = {EndCons - StartCons}");
+            GaussDirectConsecutive(APar, BPar, out int StartPar);
+            GaussReverseParallel(APar, BPar, out int EndPar);
+            Console.WriteLine($"Consecutive time = {EndPar - StartPar}");
         }
 
         //generate block-diagonal bordering matrix of size (n x n) and filled with random values from -1.0 to 1.0
@@ -117,10 +126,10 @@ namespace GaussParallelConsole
                 X[i] = (B[i] - X[MatrixWidth - 1] * A[i * MatrixWidth + MatrixWidth - 1]) / A[i * MatrixWidth + i];
             }
             time = Environment.TickCount;
-            Console.WriteLine("X:");
-            foreach (var x in X)
-                Console.Write($"{x:F4} ");
-            Console.WriteLine();
+            //Console.WriteLine("X:");
+            //foreach (var x in X)
+            //    Console.Write($"{x:F4} ");
+            //Console.WriteLine();
         }
 
         //method swaps to rows of matrix and vector
@@ -171,6 +180,25 @@ namespace GaussParallelConsole
                     }
                 }
             }
+        }
+
+        //reverse walkthrough of parallel Gauss method
+        static void GaussReverseParallel(double[] a, double[] b, out int time)
+        {
+            //find X[i]
+            static void MatrixIteration(int i)
+            {
+                X[i] = (B[i] - X[MatrixWidth - 1] * A[i * MatrixWidth + MatrixWidth - 1]) / A[i * MatrixWidth + i];
+            }
+            X = new double[MatrixWidth];
+            X[MatrixWidth - 1] = b[MatrixWidth - 1] / a[(MatrixWidth - 1) * MatrixWidth + MatrixWidth - 1];
+            //let's use built-in tools for parallel calculations
+            Parallel.For(0, MatrixWidth - 2, MatrixIteration);
+            time = Environment.TickCount;
+            //Console.WriteLine("X:");
+            //foreach (var x in X)
+            //    Console.Write($"{x:F4} ");
+            //Console.WriteLine();
         }
 
         static void ShowMatrix(double[] A, double[] B)

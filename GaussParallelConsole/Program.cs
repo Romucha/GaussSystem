@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.IO;
+using System.Text;
 
 namespace GaussParallelConsole
 {
@@ -53,6 +54,7 @@ namespace GaussParallelConsole
             A.CopyTo(APar, 0);
             B.CopyTo(BPar, 0);
 
+            //get results
             GaussDirectConsecutive(ACons, BCons, out int StartCons);
             GaussReverseConsecutive(ACons, BCons, out int EndCons);
             Console.WriteLine($"Consecutive time = {EndCons - StartCons}");
@@ -61,7 +63,9 @@ namespace GaussParallelConsole
             Console.WriteLine($"Consecutive time = {EndPar - StartPar}");
             Console.WriteLine($"Time gain is {(EndCons - StartCons) / (EndPar - StartPar):F4}");
 
-            ShowMatrix();
+            //print results into file
+            MatrixOutput();
+            Console.WriteLine("Results are written into file Result.txt");
         }
 
         //generate block-diagonal bordering matrix of size (n x n) and filled with random values from -1.0 to 1.0
@@ -82,6 +86,9 @@ namespace GaussParallelConsole
                         A[i * MatrixWidth + j] = rng.Next(-100, 100) * 0.01;                        
                     else
                         A[i * MatrixWidth + j] = 0F;
+                    //get rid of zeros in diagonal elements
+                    if (A[i * MatrixWidth + i] == 0F)
+                        A[i * MatrixWidth + i] += 0.1;
                 }
             }
         }
@@ -194,7 +201,7 @@ namespace GaussParallelConsole
         }
 
         //create text file and copy results into it
-        static void ShowMatrix()
+        static void MatrixOutput()
         {
             var fileName = "Result";
             var extention = ".txt";
@@ -203,29 +210,36 @@ namespace GaussParallelConsole
             if (!File.Exists(fileName + extention))
             {
                 path = fileName + extention;
-                File.Create(path);
+                File.Create(path).Close();
             }
             else
             {
-                var i = 1;
-                while (File.Exists(fileName + "(" + (i++).ToString() + ")" + extention));
-
-                path = fileName + "(" + (--i).ToString() + ")" + extention;
-                File.Create(path);
+                
+                for (var i = 1; ; i++)
+                {
+                    path = fileName + "(" + (i).ToString() + ")" + extention;
+                    if (!File.Exists(path))
+                    {
+                        File.Create(path).Close();
+                        break;
+                    }
+                }
             }
-            var output = "Input:\n";
+
+            StringBuilder output = new StringBuilder("Input:\n");
+            
             for (int i = 0; i < MatrixWidth; i++)
             {
                 for (int j = 0; j < MatrixWidth; j++)
                 {
-                    output += string.Format(A[i * MatrixWidth + j] >= 0F ? " {0:F4} " : "{0:F4} ", A[i * MatrixWidth + j]);
+                    output.AppendFormat(A[i * MatrixWidth + j] >= 0F ? " {0:F4} " : "{0:F4} ", A[i * MatrixWidth + j]);
                 }
-                output += string.Format(B[i] >= 0 ? "|  {0:F4}\n" : "| {0:F4}\n", B[i]);
+                output.AppendFormat(B[i] >= 0 ? "|  {0:F4}\n" : "| {0:F4}\n", B[i]);
             }
-            output += "X:\n";
+            output.Append("X:\n");
             foreach (var x in X)
-                output += string.Format("{0:F4} ", x);
-            File.WriteAllText(path, output);
+                output.AppendFormat("{0:F4} ", x);
+            File.WriteAllText(path, output.ToString());
         }
     }
 }

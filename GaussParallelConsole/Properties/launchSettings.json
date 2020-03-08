@@ -2,7 +2,7 @@
   "profiles": {
     "GaussParallelConsole": {
       "commandName": "Project",
-      "commandLineArgs": "200 100"
+      "commandLineArgs": "1000 999"
     }
   }
 }

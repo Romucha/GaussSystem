@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace GaussParallelConsole
 {
@@ -12,9 +13,6 @@ namespace GaussParallelConsole
         //width of border of A matrix
         static int BorderWidth;
 
-        //number of threads
-        static int ThreadNumber;
-
         //block-diagonal bordering matrix of coefficients 
         static double[] A;
 
@@ -25,39 +23,45 @@ namespace GaussParallelConsole
         static double[] X;
         static void Main(string[] args)
         {
-            MatrixWidth = int.Parse(args[0]);
-            BorderWidth = int.Parse(args[1]);
+            //instead of suggested multithreading we're gonna use parallel calculations and get rid of thread number setting
+            //so there's gonna be only two arguments of our program
+            if (args.Count() < 2)
+                throw new Exception("Not enough arguments");
+
+            if(!int.TryParse(args[0],out MatrixWidth))
+                throw new Exception("Matrix width is not digit");
+
+            if (!int.TryParse(args[1], out BorderWidth))
+                throw new Exception("Border width is not digit");
+
             if (MatrixWidth < BorderWidth)
                 throw new Exception("Matrix width must be bigger than border width");
-            ThreadNumber = int.Parse(args[2]);
+
+            //generate random matrices
             GenerateMatrix();
             GenerateVector();
-            //ShowMatrix(A, B);
-            //default consecutive
-            var ADef = new double[MatrixWidth * MatrixWidth];
-            var BDef = new double[MatrixWidth];
+
+            //create copies of matrices for each case
             //consecutive by columns
             var ACons = new double[MatrixWidth * MatrixWidth];
             var BCons = new double[MatrixWidth * MatrixWidth];
             //parallel
             var APar = new double[MatrixWidth * MatrixWidth];
             var BPar = new double[MatrixWidth];
-            A.CopyTo(ADef, 0);
-            B.CopyTo(BDef, 0);
             A.CopyTo(ACons, 0);
             B.CopyTo(BCons, 0);
             A.CopyTo(APar, 0);
             B.CopyTo(BPar, 0);
-            //GaussDirectConsecutive(ADef, BDef, out int Start);
-            //GaussReverseConsecutive(ADef, BDef, out int End);
-            //Console.WriteLine($"Consecutive time = {End - Start}");
-            //Console.WriteLine();
-            GaussDirectConsecutiveByColumns(ACons, BCons, out int StartCons);
+
+            GaussDirectConsecutive(ACons, BCons, out int StartCons);
             GaussReverseConsecutive(ACons, BCons, out int EndCons);
             Console.WriteLine($"Consecutive time = {EndCons - StartCons}");
-            GaussDirectConsecutive(APar, BPar, out int StartPar);
+            GaussDirectParallel(APar, BPar, out int StartPar);
             GaussReverseParallel(APar, BPar, out int EndPar);
             Console.WriteLine($"Consecutive time = {EndPar - StartPar}");
+            Console.WriteLine($"Time gain is {(EndCons - StartCons) / (EndPar - StartPar):F4}");
+
+            ShowMatrix();
         }
 
         //generate block-diagonal bordering matrix of size (n x n) and filled with random values from -1.0 to 1.0
@@ -100,18 +104,18 @@ namespace GaussParallelConsole
         //direct walkthrough of consecutive Gauss method
         static void GaussDirectConsecutive(double[] A, double[] B, out int time)
         {
-            double multiplier = 0D;
             time = Environment.TickCount;
             for (var i = 0; i < MatrixWidth - 1; i++)
             {
-                if (A[(MatrixWidth - 1) * MatrixWidth + i] != 0)
+                //ShowMatrix(A, B);
+                if (Math.Abs(A[i * MatrixWidth + i]) < Math.Abs(A[(MatrixWidth - 1) * MatrixWidth + i]))
                 {
-                    multiplier = A[i * MatrixWidth + i] / A[(MatrixWidth - 1) * MatrixWidth + i];
-                    for (var j = i; j < MatrixWidth; j++)
-                    {
-                        A[(MatrixWidth - 1) * MatrixWidth + j] = A[i * MatrixWidth + j] - A[(MatrixWidth - 1) * MatrixWidth + j] * multiplier;                        
-                    }
-                    B[MatrixWidth - 1] = -B[MatrixWidth - 1] * multiplier + B[i];
+                    SwapRows(i, MatrixWidth - 1, A, B);
+                }
+                for (var j = i + 1; j < MatrixWidth; j++)
+                {
+                    var multiplier = A[j * MatrixWidth + i] / A[i * MatrixWidth + i];
+                    SubstractRows(i, j, multiplier, A, B);
                 }
             }
         }
@@ -126,10 +130,6 @@ namespace GaussParallelConsole
                 X[i] = (B[i] - X[MatrixWidth - 1] * A[i * MatrixWidth + MatrixWidth - 1]) / A[i * MatrixWidth + i];
             }
             time = Environment.TickCount;
-            //Console.WriteLine("X:");
-            //foreach (var x in X)
-            //    Console.Write($"{x:F4} ");
-            //Console.WriteLine();
         }
 
         //method swaps to rows of matrix and vector
@@ -149,69 +149,83 @@ namespace GaussParallelConsole
         //method substarcts one row from another
         static void SubstractRows(int i, int n, double multiplier, double[] a, double[] b)
         {
-            //Console.WriteLine($"Substract {i} from {n}, multiplier is {multiplier}:");
-            //ShowMatrix(a, b);
             for (var j = 0; j < MatrixWidth; j++)
             {
                 a[n * MatrixWidth + j] -= a[i * MatrixWidth + j] * multiplier;
             }
             b[n] -= b[i] * multiplier;
-            //Console.WriteLine("Substraction is done:");
-            //ShowMatrix(a, b);
-        }
-
-        //direct walkthrough of consecutive Gauss method by columns
-        static void GaussDirectConsecutiveByColumns(double[] A, double[] B, out int time)
-        {
-            time = Environment.TickCount;
-            for (var i = 0; i < MatrixWidth - 1; i++)
-            {
-                //ShowMatrix(A, B);
-                if (Math.Abs(A[i * MatrixWidth + i]) < Math.Abs(A[(MatrixWidth - 1) * MatrixWidth + i]))
-                {
-                    SwapRows(i, MatrixWidth - 1, A, B);
-                }
-                for (var j = i + 1; j < MatrixWidth; j++)
-                {
-                    //if (A[j * MatrixWidth + i] != 0)
-                    {
-                        var multiplier = A[j * MatrixWidth + i] / A[i * MatrixWidth + i];
-                        SubstractRows(i, j, multiplier, A, B);
-                    }
-                }
-            }
-        }
+        }        
 
         //reverse walkthrough of parallel Gauss method
         static void GaussReverseParallel(double[] a, double[] b, out int time)
         {
             //find X[i]
-            static void MatrixIteration(int i)
+            void MatrixIteration(int i)
             {
-                X[i] = (B[i] - X[MatrixWidth - 1] * A[i * MatrixWidth + MatrixWidth - 1]) / A[i * MatrixWidth + i];
+                X[i] = (b[i] - X[MatrixWidth - 1] * a[i * MatrixWidth + MatrixWidth - 1]) / a[i * MatrixWidth + i];
             }
+
             X = new double[MatrixWidth];
             X[MatrixWidth - 1] = b[MatrixWidth - 1] / a[(MatrixWidth - 1) * MatrixWidth + MatrixWidth - 1];
             //let's use built-in tools for parallel calculations
             Parallel.For(0, MatrixWidth - 2, MatrixIteration);
             time = Environment.TickCount;
-            //Console.WriteLine("X:");
-            //foreach (var x in X)
-            //    Console.Write($"{x:F4} ");
-            //Console.WriteLine();
         }
 
-        static void ShowMatrix(double[] A, double[] B)
+        //direct walkthrough of parallel Gauss method
+        static void GaussDirectParallel(double[] a, double[] b, out int time)
         {
+            time = Environment.TickCount;
+            
+            for (var i = 0; i < MatrixWidth - 1; i++)
+            {
+                if (Math.Abs(A[i * MatrixWidth + i]) < Math.Abs(A[(MatrixWidth - 1) * MatrixWidth + i]))
+                {
+                    SwapRows(i, MatrixWidth - 1, A, B);
+                }
+                //single step of matrix substraction
+                void MatrixIteration(int j)
+                {
+                        var multiplier = a[j * MatrixWidth + i] / a[i * MatrixWidth + i];
+                        SubstractRows(i, j, multiplier, a, b);
+                }
+                Parallel.For(i + 1, MatrixWidth, MatrixIteration);
+            }
+        }
+
+        //create text file and copy results into it
+        static void ShowMatrix()
+        {
+            var fileName = "Result";
+            var extention = ".txt";
+            var path = "";
+            //create new file if there's already one with the same name
+            if (!File.Exists(fileName + extention))
+            {
+                path = fileName + extention;
+                File.Create(path);
+            }
+            else
+            {
+                var i = 1;
+                while (File.Exists(fileName + "(" + (i++).ToString() + ")" + extention));
+
+                path = fileName + "(" + (--i).ToString() + ")" + extention;
+                File.Create(path);
+            }
+            var output = "Input:\n";
             for (int i = 0; i < MatrixWidth; i++)
             {
                 for (int j = 0; j < MatrixWidth; j++)
                 {
-                    Console.Write(A[i * MatrixWidth + j] >= 0F ? " {0:F4} " : "{0:F4} ", A[i * MatrixWidth + j]);
+                    output += string.Format(A[i * MatrixWidth + j] >= 0F ? " {0:F4} " : "{0:F4} ", A[i * MatrixWidth + j]);
                 }
-                Console.WriteLine(B[i] >= 0 ? "|  {0:F4}" : "| {0:F4}", B[i]);
+                output += string.Format(B[i] >= 0 ? "|  {0:F4}\n" : "| {0:F4}\n", B[i]);
             }
-            Console.WriteLine();
+            output += "X:\n";
+            foreach (var x in X)
+                output += string.Format("{0:F4} ", x);
+            File.WriteAllText(path, output);
         }
     }
 }
